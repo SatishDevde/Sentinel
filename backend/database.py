@@ -4,9 +4,19 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sentinel.db")
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    DB_PATH = "/tmp/sentinel.db"
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sentinel.db")
 
 def get_db_connection():
+    # Automatically initialize DB if running on serverless ephemeral /tmp storage
+    if not os.path.exists(DB_PATH):
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.close()
+        init_db()
+        
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
