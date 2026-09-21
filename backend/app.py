@@ -288,21 +288,22 @@ def run_test_suite():
         return {"success": False, "error": str(e)}
 
 # Serve frontend directory
-frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+frontend_dir = os.path.join(project_root, "frontend")
+
 if os.path.exists(frontend_dir):
-    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
-    css_dir = os.path.join(frontend_dir, "css")
-    if os.path.exists(css_dir):
-        app.mount("/css", StaticFiles(directory=css_dir), name="css")
-    js_dir = os.path.join(frontend_dir, "js")
-    if os.path.exists(js_dir):
-        app.mount("/js", StaticFiles(directory=js_dir), name="js")
+    app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
+    app.mount("/js", StaticFiles(directory=os.path.join(frontend_dir, "js")), name="js")
 
 @app.get("/")
 def serve_index():
     index_path = os.path.join(frontend_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
+    # Fallback search if working directory differs in serverless container
+    alt_index = os.path.join(os.getcwd(), "frontend", "index.html")
+    if os.path.exists(alt_index):
+        return FileResponse(alt_index)
     return {"message": "Sentinel API active. Frontend index.html not found."}
 
 if __name__ == "__main__":
