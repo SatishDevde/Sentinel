@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+backend/__pycache__/
+tests/__pycache__/
+*.db
+backend/sentinel.db

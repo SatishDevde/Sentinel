@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel - IoT Threat Detection & Log Analysis System</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Light Glassmorphism Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Ambient Light Orbs for Glassmorphism Reflections -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
+  <!-- Main Header Navigation -->
+  <header class="app-header glass-panel">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h1>SENTINEL</h1>
+        <p>Intelligent Threat Detection & Log Analysis System for IoT</p>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('soc-tab')">
+        <i class="fa-solid fa-chart-line"></i> SOC Dashboard
+      </button>
+      <button class="nav-tab" onclick="switchTab('devices-tab')">
+        <i class="fa-solid fa-microchip"></i> IoT Devices
+      </button>
+      <button class="nav-tab" onclick="switchTab('logs-tab')">
+        <i class="fa-solid fa-list-check"></i> Log Inspector
+      </button>
+      <button class="nav-tab" onclick="switchTab('rules-tab')">
+        <i class="fa-solid fa-brain"></i> Detection Engine
+      </button>
+      <button class="nav-tab" onclick="switchTab('tests-tab')">
+        <i class="fa-solid fa-vial-circle-check"></i> System Tests
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <div class="system-status-badge">
+        <div class="pulse-dot"></div>
+        Engine Active
+      </div>
+      <button class="btn btn-primary" onclick="triggerSimulation('AUTO', 3)">
+        <i class="fa-solid fa-bolt"></i> Simulate Traffic
+      </button>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <main class="container">
+
+    <!-- Top KPI Cards -->
+    <div class="kpi-grid">
+      <div class="glass-panel kpi-card">
+        <div class="kpi-info">
+          <p>Total Ingested Logs</p>
+          <h2 id="kpi-total-logs">0</h2>
+        </div>
+        <div class="kpi-icon blue">
+          <i class="fa-solid fa-file-waveform"></i>
+        </div>
+      </div>
+
+      <div class="glass-panel kpi-card">
+        <div class="kpi-info">
+          <p>Active Security Threats</p>
+          <h2 id="kpi-active-threats" style="color: var(--severity-critical)">0</h2>
+        </div>
+        <div class="kpi-icon rose">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+
+      <div class="glass-panel kpi-card">
+        <div class="kpi-info">
+          <p>Monitored IoT Devices</p>
+          <h2 id="kpi-total-devices">0</h2>
+        </div>
+        <div class="kpi-icon emerald">
+          <i class="fa-solid fa-network-wired"></i>
+        </div>
+      </div>
+
+      <div class="glass-panel kpi-card">
+        <div class="kpi-info">
+          <p>Compromised / At Risk</p>
+          <h2 id="kpi-compromised-devices" style="color: var(--severity-high)">0</h2>
+        </div>
+        <div class="kpi-icon amber">
+          <i class="fa-solid fa-shield-virus"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Simulation & Stream Control Bar -->
+    <div class="glass-panel control-bar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-muted);">
+          <i class="fa-solid fa-vial"></i> IoT Attack Simulator:
+        </span>
+        <select id="sim-scenario" class="select-input">
+          <option value="AUTO">Random Mixed Telemetry</option>
+          <option value="BRUTE_FORCE">Brute Force Login Burst</option>
+          <option value="PORT_SCAN">Port Scan Probe Burst</option>
+          <option value="DOS_FLOOD">DoS Traffic Flood</option>
+          <option value="CONFIG_TAMPER">Configuration Tampering</option>
+          <option value="FIRMWARE_TAMPER">Firmware Tampering Attempt</option>
+          <option value="SUSPICIOUS_IP">Suspicious External IP Comm</option>
+        </select>
+        <button class="btn btn-secondary" onclick="runSelectedSimulation()">
+          <i class="fa-solid fa-play"></i> Inject Batch (5 Logs)
+        </button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer;">
+          <input type="checkbox" id="auto-refresh-toggle" checked onchange="toggleAutoRefresh()"> Live Streaming (3s)
+        </label>
+        <button class="btn btn-secondary" onclick="fetchDashboardData()">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: SOC DASHBOARD -->
+    <div id="soc-tab" class="tab-content active">
+      <div class="dashboard-grid">
+        
+        <!-- Left: Detected Threats Table -->
+        <div class="glass-panel">
+          <div class="section-header">
+            <h3><i class="fa-solid fa-shield-cat" style="color: var(--primary);"></i> Detected Threat Events</h3>
+            <span class="badge badge-critical" id="threat-count-badge">0 Active</span>
+          </div>
+
+          <div class="table-container">
+            <table class="glass-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Device</th>
+                  <th>Category</th>
+                  <th>Severity</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="threats-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading threats data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: Charts & Distribution -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          
+          <div class="glass-panel" style="padding: 24px;">
+            <div class="section-header" style="padding: 0 0 16px 0; border: none;">
+              <h3><i class="fa-solid fa-chart-pie" style="color: #8b5cf6;"></i> Threat Distribution</h3>
+            </div>
+            <div style="height: 240px; position: relative;">
+              <canvas id="threatChart"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px;">
+            <div class="section-header" style="padding: 0 0 16px 0; border: none;">
+              <h3><i class="fa-solid fa-layer-group" style="color: #06b6d4;"></i> Active Detection Layers</h3>
+            </div>
+            <div style="font-size: 0.85rem; line-height: 1.8;">
+              <p><strong style="color: var(--primary);"><i class="fa-solid fa-check"></i> Rule-Based Engine:</strong> High-speed regex & threshold matchers active.</p>
+              <p><strong style="color: #8b5cf6;"><i class="fa-solid fa-check"></i> ML Anomaly Detector:</strong> Scikit-Learn IsolationForest scoring vector space.</p>
+              <p><strong style="color: #059669;"><i class="fa-solid fa-check"></i> Risk Assessor:</strong> Dynamic device score scaling enabled.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: IOT DEVICES -->
+    <div id="devices-tab" class="tab-content">
+      <div class="section-header glass-panel" style="margin-bottom: 20px;">
+        <h3><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Tracked IoT Device Fleet</h3>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Real-time device status and risk metrics</span>
+      </div>
+
+      <div class="device-grid" id="device-cards-grid">
+        <!-- Dynamic Device Cards -->
+      </div>
+    </div>
+
+    <!-- TAB 3: LOG INSPECTOR -->
+    <div id="logs-tab" class="tab-content">
+      <div class="glass-panel" style="margin-bottom: 24px; padding: 24px;">
+        <div class="section-header" style="padding: 0 0 16px 0; border-bottom: 1px solid var(--glass-border-subtle);">
+          <h3><i class="fa-solid fa-terminal" style="color: #0284c7;"></i> Ingest Custom IoT Log</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr auto; gap: 12px; margin-top: 16px;">
+          <input type="text" id="cust-device" class="select-input" placeholder="Device ID (e.g. DEV-CAM-01)">
+          <select id="cust-log-type" class="select-input">
+            <option value="system">system</option>
+            <option value="authentication">authentication</option>
+            <option value="network">network</option>
+          </select>
+          <input type="text" id="cust-action" class="select-input" placeholder="Action (e.g. AUTH_FAIL)">
+          <input type="text" id="cust-payload" class="select-input" placeholder="Log Payload / Message Details">
+          <button class="btn btn-primary" onclick="submitCustomLog()">
+            <i class="fa-solid fa-paper-plane"></i> Ingest
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-panel">
+        <div class="section-header">
+          <h3><i class="fa-solid fa-database"></i> Normalized Log Stream</h3>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Latest ingested events</span>
+        </div>
+        <div class="table-container">
+          <table class="glass-table">
+            <thead>
+              <tr>
+                <th>Log ID</th>
+                <th>Timestamp</th>
+                <th>Device</th>
+                <th>Type</th>
+                <th>Action</th>
+                <th>Source IP</th>
+                <th>Target Port</th>
+                <th>Payload</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body">
+              <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: RULES & ML ENGINE -->
+    <div id="rules-tab" class="tab-content">
+      <div class="dashboard-grid">
+        <div class="glass-panel" style="padding: 24px;">
+          <div class="section-header" style="padding: 0 0 16px 0;">
+            <h3><i class="fa-solid fa-gears" style="color: var(--primary);"></i> Predefined Rule-Based Detections</h3>
+          </div>
+          <div id="rules-list-container" style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+            <!-- Active rules list -->
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 24px;">
+          <div class="section-header" style="padding: 0 0 16px 0;">
+            <h3><i class="fa-solid fa-brain" style="color: #8b5cf6;"></i> Scikit-Learn Anomaly Model</h3>
+          </div>
+          <div style="font-size: 0.88rem; line-height: 1.8; color: var(--text-main);">
+            <p><strong>Algorithm:</strong> IsolationForest (n_estimators=100)</p>
+            <p><strong>Contamination Factor:</strong> 0.05 (5% baseline threshold)</p>
+            <p><strong>Feature Vectors:</strong> Port Normalization, Payload Entropy, Log Level Weight, Action Type Score.</p>
+            <div class="code-block" style="margin-top: 16px;">
+              Baseline fit: 200 normal IoT samples<br>
+              Status: FITTED & ACTIVE<br>
+              Decision score threshold: 0.58
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: SYSTEM TESTS -->
+    <div id="tests-tab" class="tab-content">
+      <div class="glass-panel" style="padding: 28px;">
+        <div class="section-header" style="padding: 0 0 20px 0;">
+          <div>
+            <h3><i class="fa-solid fa-vial-circle-check" style="color: #10b981;"></i> Automated Test Suite & Benchmarks</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Run full pytest suite covering log parser, rule engine, ML model, threat engine, and REST APIs.</p>
+          </div>
+          <button class="btn btn-primary" onclick="runAutomatedTests()">
+            <i class="fa-solid fa-flask"></i> Run Automated Tests
+          </button>
+        </div>
+
+        <div id="test-results-container" style="margin-top: 20px;">
+          <div style="padding: 20px; background: rgba(248, 250, 252, 0.6); border-radius: var(--radius-md); text-align: center; color: var(--text-muted);">
+            Click "Run Automated Tests" to execute unit and integration test suite.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Evidence & Recommended Action Glass Modal -->
+  <div class="modal-overlay" id="evidence-modal">
+    <div class="modal-card">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h3 id="modal-title" style="font-family: var(--font-display); font-size: 1.3rem;">Threat Details & Evidence</h3>
+        <button style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);" onclick="closeModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="modal-content">
+        <!-- Dynamic Content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- App Javascript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
